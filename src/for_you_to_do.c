@@ -29,7 +29,21 @@ int get_block_size(){
 int mydgetrf(double *A, int *ipiv, int n) 
 {
     /* add your code here */
-
+    int i, j, k;
+    double *temp = (double*) malloc(sizeof(double) * n);
+    
+    for (i = 0; i < (n - 1); i ++){
+        int jp = i;
+        pivot = fabs(A[i * n + i]);
+        
+        // find pivot
+        for (j = i + 1; j < n; j ++){
+            if (fabs(A[j * n + i]) > pivot){
+                pivot = fabs(A[j * n + i]);
+                jp = j;
+            }
+        }
+    }
     return 0;
 }
 
