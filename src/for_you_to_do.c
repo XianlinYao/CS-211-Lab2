@@ -30,20 +30,55 @@ int mydgetrf(double *A, int *ipiv, int n)
 {
     /* add your code here */
     int i, j, k;
-    double *temp = (double*) malloc(sizeof(double) * n);
+    double *temprow = (double*) malloc(sizeof(double) * n);
     
-    for (i = 0; i < (n - 1); i ++){
+    for (i = 0; i < (n - 1); i ++)
+    {
         int jp = i;
         pivot = fabs(A[i * n + i]);
         
-        // find pivot
-        for (j = i + 1; j < n; j ++){
+        // find pivoting
+        for (j = i + 1; j < n; j ++)
+        {
             if (fabs(A[j * n + i]) > pivot){
                 pivot = fabs(A[j * n + i]);
                 jp = j;
             }
         }
+        
+        // swap
+        if (pivot == 0)
+        {
+            printf("Warning: Matrix A is singular.")
+            return -1;
+        }
+        
+        else
+        {
+            if (jp != i)
+            {
+                int temp = ipiv[i];
+                ipiv[i] = ipiv[jp];
+                ipiv[jp] = temp;
+                
+                memcpy(temprow, A + i * n, n * sizeof(double));
+                memcpy(A + i * n, A + jp * n, n * sizeof(double));
+                memcpy(A + jp * n, temprow, n * sizeof(double));
+            }    
+        }
+        
+        // factorization
+        for (j = i + 1; j < n; j ++)
+            A[j * n + i] = A[j * n + i] / A[i * n + i];
+        for (j = i + 1; j < n; j ++)
+        {
+            for (k = i + 1; k < n; k ++)
+            {
+                A[j * n + k] = A[j * n + k] - A[j * n + i] * A[i * n + k];
+            }
+        }
     }
+    free(temprow);
     return 0;
 }
 
