@@ -117,36 +117,32 @@ void mydtrsv(char UPLO, double *A, double *B, int n, int *ipiv)
     int i, j;
     double sum;
     
-    switch(UPLO)
+    if (UPLO == 'L')
     {
-        case 'L':
-            y[0] = B[ipiv[0]];
-            for (i = 1; i < n; i ++)
+    	y[0] = B[ipiv[0]];
+        for (i = 1; i < n; i ++)
+        {
+            sum = 0.0;
+            for (j = 0; j < i; j ++)
             {
-                sum = 0.0;
-                for (j = 0; j < i; j ++)
-                {
-                    sum += y[j] * A[i * n + j];
-                }
-                y[i] = B[ipiv[i]] - sum;
+                sum += y[j] * A[i * n + j];
             }
-            break;
-        case 'U':
-            y[n - 1] = B[n - 1] / A[(n - 1) * n + n - 1];
-            for (i = n - 2; i >= 0; i --)
-            {
-                for (j = n - 1; j > i; j --)
-                {
-                    sum += y[j] * A[i * n + j];
-                }
-                y[i] = (B[i] - sum) / A[i * n + i];
-            }
-            break;
-        default:
-            printf("\nCheck your UPLO input, it must be L or U.\n");
-            break;
+            y[i] = B[ipiv[i]] - sum;
+        }
     }
-    
+    else if (UPLO == 'U')
+    {
+	y[n - 1] = B[n - 1] / A[(n - 1) * n + n - 1];
+        for (i = n - 2; i >= 0; i --)
+        {
+	    sum = 0.0;
+            for (j = n - 1; j > i; j --)
+            {
+                sum += y[j] * A[i * n + j];
+            }
+            y[i] = (B[i] - sum) / A[i * n + i];
+        }
+    }        
     memcpy(B, y, sizeof(double) * n);
     return;
 }
