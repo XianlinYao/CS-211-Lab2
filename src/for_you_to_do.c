@@ -35,6 +35,7 @@ int mydgetrf(double *A, int *ipiv, int n)
     for (i = 0; i < (n - 1); i ++)
     {
         int jp = i;
+	double pivot;
         pivot = fabs(A[i * n + i]);
         
         // find pivoting
@@ -49,7 +50,7 @@ int mydgetrf(double *A, int *ipiv, int n)
         // swap
         if (pivot == 0)
         {
-            printf("Warning: Matrix A is singular.")
+            printf("Warning: Matrix A is singular.");
             return -1;
         }
         
@@ -259,7 +260,8 @@ int mydgetrf_block(double *A, int *ipiv, int n, int b)
 
         for (i = ib; i < (n - 1); i ++)
         {
-            int jp = i;
+	    int jp = i;
+	    double pivot;
             pivot = fabs(A[i * n + i]);
 
             // find pivoting
