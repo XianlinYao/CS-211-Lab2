@@ -151,12 +151,7 @@ void mydtrsv(char UPLO, double *A, double *B, int n, int *ipiv)
     return;
 }
 
-/**
- * 
- * Same function as what you used in lab1, cache_part4.c : optimal( ... ).
- * 
- **/
-void mydgemm(double *A, double *B, double *C, int n, int i, int j, int k, int b)
+void mydgemm(double* A, double* B, double* C, int n, int i, int j, int k, int b)
 {
     /* add your code here */
     /* please just copy from your lab1 function optimal( ... ) */
@@ -180,13 +175,13 @@ void mydgemm(double *A, double *B, double *C, int n, int i, int j, int k, int b)
 
             for (k1 = k; k1 < k + b; k1 += 3)
             {
-		        int l;
-                for (l = 0; l < 3; l++)
+                int d;
+                for (d = 0; d < 3; d++)
                 {
-                    int ta = i1 * n + k1 + l;
+                    int ta = i1 * n + k1 + d;
                     int tta = ta + n;
                     int ttta = tta + n;
-                    int tb = k1 * n + j1 + l * n;
+                    int tb = k1 * n + j1 + d * n;
                     register double a0 = A[ta];
                     register double a1 = A[tta];
                     register double a2 = A[ttta];
@@ -194,15 +189,15 @@ void mydgemm(double *A, double *B, double *C, int n, int i, int j, int k, int b)
                     register double b1 = B[tb + 1];
                     register double b2 = B[tb + 2];
 
-                    c00 += a0 * b0;
-                    c01 += a0 * b1;
-                    c02 += a0 * b2;
-                    c10 += a1 * b0;
-                    c11 += a1 * b1;
-                    c12 += a1 * b2;
-                    c20 += a2 * b0;
-                    c21 += a2 * b1;
-                    c22 += a2 * b2;
+                    c00 -= a0 * b0;
+                    c01 -= a0 * b1;
+                    c02 -= a0 * b2;
+                    c10 -= a1 * b0;
+                    c11 -= a1 * b1;
+                    c12 -= a1 * b2;
+                    c20 -= a2 * b0;
+                    c21 -= a2 * b1;
+                    c22 -= a2 * b2;
                 }
             }
             C[t] = c00;
@@ -219,55 +214,99 @@ void mydgemm(double *A, double *B, double *C, int n, int i, int j, int k, int b)
     return;
 }
 
+void dgemm3(const double* A, const double* B, double* C, const int n)
+{
+    int i, j, k;
+    for (i = 0; i < n; i += 3) {
+        for (j = 0; j < n; j += 3) {
+            register double c00 = C[i * n + j], c01 = C[i * n + j + 1], c02 = C[i * n + j + 2];
+            register double c10 = C[(i + 1) * n + j], c11 = C[(i + 1) * n + j + 1], c12 = C[(i + 1) * n + j + 2];
+            register double c20 = C[(i + 2) * n + j], c21 = C[(i + 2) * n + j + 1], c22 = C[(i + 2) * n + j + 2];
+
+            for (k = 0; k < n; k += 3) {
+                register double a00 = A[i * n + k], b00 = B[k * n + j];
+                register double a10 = A[(i + 1) * n + k], b01 = B[k * n + j + 1];
+                register double a20 = A[(i + 2) * n + k], b02 = B[k * n + j + 2];
+
+
+                c00 += a00 * b00; c01 += a00 * b01; c02 += a00 * b02;
+                c10 += a10 * b00; c11 += a10 * b01; c12 += a10 * b02;
+                c20 += a20 * b00; c21 += a20 * b01; c22 += a20 * b02;
+
+                a00 = A[i * n + k + 1]; b00 = B[(k + 1) * n + j];
+                a10 = A[(i + 1) * n + k + 1]; b01 = B[(k + 1) * n + j + 1];
+                a20 = A[(i + 2) * n + k + 1]; b02 = B[(k + 1) * n + j + 2];
+
+                c00 += a00 * b00; c01 += a00 * b01; c02 += a00 * b02;
+                c10 += a10 * b00; c11 += a10 * b01; c12 += a10 * b02;
+                c20 += a20 * b00; c21 += a20 * b01; c22 += a20 * b02;
+
+                a00 = A[i * n + k + 2]; b00 = B[(k + 2) * n + j];
+                a10 = A[(i + 1) * n + k + 2]; b01 = B[(k + 2) * n + j + 1];
+                a20 = A[(i + 2) * n + k + 2]; b02 = B[(k + 2) * n + j + 2];
+
+                c00 += a00 * b00; c01 += a00 * b01; c02 += a00 * b02;
+                c10 += a10 * b00; c11 += a10 * b01; c12 += a10 * b02;
+                c20 += a20 * b00; c21 += a20 * b01; c22 += a20 * b02;
+            }
+
+            C[i * n + j] = c00; C[i * n + j + 1] = c01; C[i * n + j + 2] = c02;
+            C[(i + 1) * n + j] = c10; C[(i + 1) * n + j + 1] = c11; C[(i + 1) * n + j + 2] = c12;
+            C[(i + 2) * n + j] = c20; C[(i + 2) * n + j + 1] = c21; C[(i + 2) * n + j + 2] = c22;
+        }
+    }
+}
+
 /**
- * 
+ *
  * this function computes LU decomposition
  * for a square matrix using block gepp introduced in course
  * lecture .
- * 
+ *
  * just implement the block algorithm you learned in class.
- * 
- * syntax 
- *  
+ *
+ * syntax
+ *
  *  input :
- *      
- * 
+ *
+ *
  *      A     n by n     , square matrix
- * 
- *    
- * 
+ *
+ *
+ *
  *      ipiv  1 by n     , vector , denotes interchanged index due
  *                                  to pivoting by mydgetrf()
- * 
+ *
  *      n                , length of vector / size of matrix
- *     
- *      b                , block size   
+ *
+ *      b                , block size
  *  output :
  *      return -1 : if the matrix A is singular (max pivot == 0)
- *      return  0 : return normally 
- * 
+ *      return  0 : return normally
+ *
  **/
-int mydgetrf_block(double *A, int *ipiv, int n, int b) 
+int mydgetrf_block(double* A, int* ipiv, int n, int b)
 {
-    int ib;
-    
+    int ib, end;
+    int i, j, k;
+    double *temprow, *temp, *ll, *UU, *A1, *A2;
+
     for (ib = 0; ib < n; ib += b)
     {
         end = ib + b - 1;
-        
-        int i, j, k;
-        double *temprow = (double*) malloc(sizeof(double) * b);
 
-        for (i = ib; i < (n - 1); i ++)
+        temprow = (double*) malloc(sizeof(double) * b);
+
+        for (i = ib; i < (n - 1); i++)
         {
-	    int jp = i;
-	    double pivot;
+            int jp = i;
+            double pivot;
             pivot = fabs(A[i * n + i]);
 
             // find pivoting
-            for (j = i + 1; j < n; j ++)
+            for (j = i + 1; j < n; j++)
             {
-                if (fabs(A[j * n + i]) > pivot){
+                if (fabs(A[j * n + i]) > pivot) {
                     pivot = fabs(A[j * n + i]);
                     jp = j;
                 }
@@ -277,7 +316,7 @@ int mydgetrf_block(double *A, int *ipiv, int n, int b)
             if (pivot == 0)
             {
                 printf("Warning: Matrix A is singular.")
-                return -1;
+                    return -1;
             }
 
             else
@@ -287,50 +326,81 @@ int mydgetrf_block(double *A, int *ipiv, int n, int b)
                     int temp = ipiv[i];
                     ipiv[i] = ipiv[jp];
                     ipiv[jp] = temp;
-                    
+
                     memcpy(temprow, A + i * n, n * sizeof(double));
                     memcpy(A + i * n, A + jp * n, n * sizeof(double));
                     memcpy(A + jp * n, temprow, n * sizeof(double));
-                }    
+                }
             }
 
             // factorization
-            for (j = i + 1; j < n; j ++)
+            for (j = i + 1; j < n; j++)
                 A[j * n + i] = A[j * n + i] / A[i * n + i];
-            for (j = i + 1; j < n; j ++)
+            for (j = i + 1; j < n; j++)
             {
-                for (k = i + 1; k < ib + b; k ++)
+                for (k = i + 1; k < ib + b; k++)
                 {
                     A[j * n + k] = A[j * n + k] - A[j * n + i] * A[i * n + k];
                 }
             }
         }
         free(temprow);
-        
+
         // built LL ^ (-1)
-        double *ll = (double*) calloc(sizeof(double) (b * b));
-        
-        for (int i = 0; i < b; i ++)
+        ll = (double*) calloc((b * b), sizeof(double));
+
+        for (int i = 0; i < b; i++)
         {
-            ll[i * b + i] = 0;
-            for (int j = i + 1; j < b; j ++)
+            ll[i * b + i] = 1;
+            for (int j = i + 1; j < b; j++)
             {
-                for (k = i; k < j; k ++)
+                for (k = i; k < j; k++)
                 {
                     ll[j * b + i] = ll[j * b + i] - A[ib * n + ib + j * n + k] * ll[k * b + i];
                 }
             }
         }
-        
+
         // update A(ib:end, end+1:n)
-        for (i = ib; i <= end; i ++)
+        for (k = end + 1; k < n; k += b)
         {
-            for (j = end + 1; i < n
+            temp = (double*) malloc((b * b) * sizeof(double));
+            UU = (double*) malloc((b * b) * sizeof(double));
+            
+            // copy A to UU
+            for (i = 0; i < b; i++)
+            {
+                for (j = 0; j < b; j++)
+                {
+                    UU[i * b + j] = A[ib * n + k + i * n + j];
+                }
+            }
+
+            // calculate new UU
+            dgemm3(ll, UU, temp, b);
+
+            // copy UU to A
+            for (i = 0; i < b; i++)
+            {
+                for (j = 0; j < b; j++)
+                {
+                    A[ib * n + k + i * n + j] = temp[i * b + j];
+                }
+            }
         }
-        
+
+
+        // update A(end+1: n, end + 1: n)
+        if (matrix_copy(A1, A, n, n)) return -1;
+        if (matrix_copy(A2, A, n, n)) return -1;
+        for (i = end + 1; i < n; i += b)
+        {
+            for (j = end + 1; j < n; j += b)
+            {
+                mydgemm(A1, A2, A, n, i, j, ib, b);
+            }
+        }
     }
-    
-    
+
     return 0;
 }
-
