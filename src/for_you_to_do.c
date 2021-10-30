@@ -210,60 +210,62 @@ void mydgemm(double* A, double* B, double* C, int n, int i, int j, int k, int b)
     return;
 }
 
-int mydgetrf_block(double *A, int *PVT, int n, int b)
+int mydgetrf_block(double *A, int *ipiv, int n, int b)
 {
-    int ib, i, j, k, maxIndex;
-    double max, sum;
+    int ib, i, j, k;
+    double sum;
     double *temprow = (double*) malloc(sizeof(double) * n);
 
-    for (ib = 0; ib < n; ib += b)
+    for (ib = 0; ib < (n - 1); ib += b)
     {
-        for (i = ib; i < ib+b && i < n; i++)
-        {
-            // pivoting
-            maxIndex = i;
-            max = fabs(A[i*n + i]);
-            
-            int j;
-            for (j = i+1; j < n; j++)
-            {
-                if (fabs(A[j*n + i]) > max)
-                {
-                    maxIndex = j;
-                    max = fabs(A[j*n + i]);
-                }
-            }
-            if (max == 0)
-            {
-                printf("LU factorization failed: coefficient matrix is singular.\n");
-                return -1;
-            }
-            else
-            {
-                if (maxIndex != i)
-                {
-                    // save pivoting information
-                    int temp = PVT[i];
-                    PVT[i] = PVT[maxIndex];
-                    PVT[maxIndex] = temp;
-                    // swap rows
-                    memcpy(temprow, A + i*n, n * sizeof(double));
-                    memcpy(A + i*n, A + maxIndex*n, n * sizeof(double));
-                    memcpy(A + maxIndex*n, temprow, n * sizeof(double));
-                }
-            }
+        for (i = ib; i < ib + b; i ++)
+	{
+		int jp = i;
+		double pivot;
+		pivot = fabs(A[i * n + i]);
 
-            // factorization
-            for (j = i+1; j < n; j++)
-            {
-                A[j*n + i] = A[j*n + i] / A[i*n + i];
-                int k;
-                for (k = i+1; k < ib+b && k < n; k++)
-                {
-                    A[j*n + k] -= A[j*n +i] * A[i*n + k];
-                }
-            }
-        }
+		// find pivoting
+		for (j = i + 1; j < n; j ++)
+		{
+		    if (fabs(A[j * n + i]) > pivot){
+			pivot = fabs(A[j * n + i]);
+			jp = j;
+		    }
+		}
+
+		// swap
+		if (pivot == 0)
+		{
+		    printf("Warning: Matrix A is singular.");
+		    return -1;
+		}
+
+		else
+		{
+		    if (jp != i)
+		    {
+			int temp = ipiv[i];
+			ipiv[i] = ipiv[jp];
+			ipiv[jp] = temp;
+
+			memcpy(temprow, A + i * n, n * sizeof(double));
+			memcpy(A + i * n, A + jp * n, n * sizeof(double));
+			memcpy(A + jp * n, temprow, n * sizeof(double));
+		    }    
+		}
+
+		// factorization
+		for (j = i + 1; j < n; j ++)
+		    A[j * n + i] = A[j * n + i] / A[i * n + i];
+		for (j = i + 1; j < n; j ++)
+		{
+		    for (k = i + 1; k < n; k ++)
+		    {
+			A[j * n + k] = A[j * n + k] - A[j * n + i] * A[i * n + k];
+		    }
+		}
+	}
+	free(temprow);
 
         // update A(ib:end, end+1:n)
         for (i = ib; i < ib+b && i < n; i++)
@@ -284,7 +286,7 @@ int mydgetrf_block(double *A, int *PVT, int n, int b)
         {
             for (j = ib+b; j < n; j += b)
             {
-                dgemm3_cache_mod(A, A, A, n, i, j, ib, b);
+                mydgemm(A, A, A, n, i, j, ib, b);
             }
         }
     }
